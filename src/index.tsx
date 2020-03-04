@@ -2,11 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { DndProvider } from 'react-dnd';
 import Backend from 'react-dnd-html5-backend';
+import { createGlobalStyle } from 'styled-components';
+import reset from 'styled-reset';
 import { App } from './App';
 import * as serviceWorker from './serviceWorker';
 
+const GlobalStyles = createGlobalStyle`
+    ${reset}
+
+    *, *:before, &:after {
+        box-sizing: border-box;
+    }
+`;
+
 ReactDOM.render(
     <DndProvider backend={Backend}>
+        <GlobalStyles />
         <App />
     </DndProvider>,
     document.getElementById('root')

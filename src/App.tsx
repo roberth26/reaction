@@ -55,7 +55,15 @@ function Output({ node }: { node: Node }) {
     );
 }
 
-function Node({ node }: { node: Node }) {
+function Node({
+    node,
+    isSelected,
+    onSelect,
+}: {
+    node: Node;
+    isSelected?: boolean;
+    onSelect: (node: Node) => void;
+}) {
     const [{ isDragging }, drag] = useDrag({
         item: {
             type: 'NODE',
@@ -70,19 +78,28 @@ function Node({ node }: { node: Node }) {
         return <div ref={drag} />;
     }
 
+    const handleClick: React.MouseEventHandler<HTMLDivElement> = mouseEvent => {
+        onSelect(node);
+    };
+
     return (
         <div
             ref={drag}
+            onClick={handleClick}
             style={{
                 width: 240,
                 height: 120,
-                backgroundColor: 'grey',
+                backgroundColor: '#82a0af',
                 left: node.x,
                 top: node.y,
                 position: 'absolute',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                borderRadius: 3,
+                overflow: 'hidden',
+                boxShadow: isSelected ? '0 1px 8px #00d0ff' : '0 1px 8px rgba(0,0,0,.7)',
+                border: isSelected ? '2px solid #00d0ff' : 0,
             }}
         >
             <Input node={node} />
@@ -93,15 +110,17 @@ function Node({ node }: { node: Node }) {
 }
 
 export function App() {
-    const [{ nodesById, allNodeIds }, setNodes] = useState<{
+    const [{ nodesById, allNodeIds, selectedNodeId }, setNodes] = useState<{
         nodesById: Partial<Record<Node['id'], Node>>;
         allNodeIds: Node['id'][];
+        selectedNodeId: Node['id'] | null;
     }>({
         nodesById: {
             a: { id: 'a', type: 'string', payload: 'this is node 1', x: 100, y: 200 },
             b: { id: 'b', type: 'string', payload: 'this is node 2', x: 600, y: 200 },
         },
         allNodeIds: ['a', 'b'],
+        selectedNodeId: null,
     });
 
     const [, drop] = useDrop({
@@ -141,6 +160,13 @@ export function App() {
         });
     };
 
+    const handleNodeSelect = (node: Node) => {
+        setNodes(state => ({
+            ...state,
+            selectedNodeId: node['id'],
+        }));
+    };
+
     const nodes = allNodeIds
         .map(nodeId => nodesById[nodeId])
         .filter((node): node is Node => node != null);
@@ -148,10 +174,22 @@ export function App() {
     return (
         <div
             ref={drop}
-            style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}
+            style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#161e27',
+            }}
         >
             {nodes.map(node => (
-                <Node key={node.id} node={node} />
+                <Node
+                    key={node.id}
+                    node={node}
+                    isSelected={node.id === selectedNodeId}
+                    onSelect={handleNodeSelect}
+                />
             ))}
         </div>
     );
