@@ -1,9 +1,11 @@
-import { ReactionNodeSpec } from '../types';
+import { ReactionNode, ReactionNodeSpec } from '../types';
 
-export const spec: ReactionNodeSpec<'number', 'number', {}, { value: number }> = {
-    create: (id, name) => ({
-        id,
-        name,
+export type NumberNode = ReactionNode<'number', 'number', {}, { value: number }>;
+
+export const spec: ReactionNodeSpec<NumberNode> = {
+    create: attrs => ({
+        ...attrs,
+        kind: 'number',
         type: 'number',
         state: { value: 1 },
         inputs: {},
@@ -12,6 +14,8 @@ export const spec: ReactionNodeSpec<'number', 'number', {}, { value: number }> =
             nodeIds: [],
             value: null,
         },
+        x: 0,
+        y: 0,
     }),
     evaluate: (_, { value }) => value,
 };

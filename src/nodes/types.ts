@@ -24,46 +24,28 @@ export type ReactionNodeOutput<NodeType extends ReactionNodeType = ReactionNodeT
 };
 
 export type ReactionNode<
-    Type extends string = string,
-    NodeType extends ReactionNodeType = ReactionNodeType,
+    Kind extends string = string,
+    Type extends ReactionNodeType = ReactionNodeType,
     Inputs extends ReactionNodeInputs = ReactionNodeInputs,
     State extends object = {}
 > = {
+    kind: Kind;
     type: Type;
     inputs: Inputs;
-    output: ReactionNodeOutput<NodeType>;
+    output: ReactionNodeOutput<Type>;
     state: State;
     id: string;
     name: string;
+    x: number;
+    y: number;
 };
 
-export type ReactionNodeCreator<
-    Type extends string = string,
-    NodeType extends ReactionNodeType = ReactionNodeType,
-    Inputs extends ReactionNodeInputs = ReactionNodeInputs,
-    State extends object = {}
-> = (
-    id: ReactionNode['id'],
-    name: ReactionNode['name']
-) => ReactionNode<Type, NodeType, Inputs, State>;
-
-export type ReactionNodeEvaluator<
-    NodeType extends ReactionNodeType = ReactionNodeType,
-    Inputs extends ReactionNodeInputs = ReactionNodeInputs,
-    State extends object = {}
-> = (
-    args: {
-        [key in keyof Inputs]: ReactionType<Inputs[key]['type']>[];
-    },
-    state: State
-) => ReactionType<NodeType>;
-
-export type ReactionNodeSpec<
-    Type extends string = string,
-    NodeType extends ReactionNodeType = ReactionNodeType,
-    Inputs extends ReactionNodeInputs = ReactionNodeInputs,
-    State extends object = {}
-> = {
-    create: ReactionNodeCreator<Type, NodeType, Inputs, State>;
-    evaluate: ReactionNodeEvaluator<NodeType, Inputs, State>;
+export type ReactionNodeSpec<Node extends ReactionNode = ReactionNode> = {
+    create: (attrs: Pick<Node, 'id' | 'name'>) => Node;
+    evaluate: (
+        args: {
+            [key in keyof Node['inputs']]: ReactionType<Node['inputs'][key]['type']>[];
+        },
+        state: Node['state']
+    ) => ReactionType<Node['type']>;
 };

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import { ReactionNode } from './nodes/types';
+import { createNode } from './nodes/utils';
+import { SumNode } from './nodes/specs/sum';
 
-function Input({ node }: { node: Node }) {
+function Input({ node }: { node: ReactionNode }) {
     const [{ canDrop, isOver }, dropRef] = useDrop({
         accept: node.type,
         collect: monitor => ({
@@ -23,16 +26,8 @@ function Input({ node }: { node: Node }) {
     );
 }
 
-type Node = {
-    id: string;
-    type: 'string' | 'number';
-    payload: any;
-    x: number;
-    y: number;
-};
-
-function Output({ node }: { node: Node }) {
-    const [, dragRef] = useDrag<Node, Node, { opacity: number }>({
+function Output({ node }: { node: ReactionNode }) {
+    const [, dragRef] = useDrag<ReactionNode, ReactionNode, { opacity: number }>({
         item: node,
         end: (item, monitor) => {
             const dropResult = monitor.getDropResult();
@@ -60,9 +55,9 @@ function Node({
     isSelected,
     onSelect,
 }: {
-    node: Node;
+    node: ReactionNode;
     isSelected?: boolean;
-    onSelect: (node: Node) => void;
+    onSelect: (node: ReactionNode) => void;
 }) {
     const [{ isDragging }, drag] = useDrag({
         item: {
@@ -103,29 +98,71 @@ function Node({
             }}
         >
             <Input node={node} />
-            {node.payload}
+            {node.kind}
             <Output node={node} />
         </div>
     );
 }
 
-export function App() {
-    const [{ nodesById, allNodeIds, selectedNodeId }, setNodes] = useState<{
-        nodesById: Partial<Record<Node['id'], Node>>;
-        allNodeIds: Node['id'][];
-        selectedNodeId: Node['id'] | null;
-    }>({
-        nodesById: {
-            a: { id: 'a', type: 'string', payload: 'this is node 1', x: 100, y: 200 },
-            b: { id: 'b', type: 'string', payload: 'this is node 2', x: 600, y: 200 },
+const numberNode = createNode('number')!;
+
+const numberNode1: ReactionNode = {
+    ...numberNode!,
+    id: 'a',
+    x: 100,
+    y: 200,
+    output: {
+        ...numberNode.output,
+        nodeIds: ['c'],
+    },
+};
+const numberNode2: ReactionNode = {
+    ...numberNode!,
+    id: 'b',
+    x: 100,
+    y: 400,
+    output: {
+        ...numberNode.output,
+        nodeIds: ['c'],
+    },
+};
+
+const sumNode = createNode('sum')! as SumNode;
+
+const sumNode1: SumNode = {
+    ...sumNode,
+    id: 'c',
+    x: 600,
+    y: 300,
+    inputs: {
+        ...sumNode.inputs,
+        operands: {
+            ...sumNode.inputs.operands,
+            nodeIds: ['a', 'b'],
         },
-        allNodeIds: ['a', 'b'],
-        selectedNodeId: null,
-    });
+    },
+};
+
+const initialState: {
+    nodesById: Partial<Record<ReactionNode['id'], ReactionNode>>;
+    allNodeIds: ReactionNode['id'][];
+    selectedNodeId: ReactionNode['id'] | null;
+} = {
+    nodesById: {
+        [numberNode1.id]: numberNode1,
+        [numberNode2.id]: numberNode2,
+        [sumNode1.id]: sumNode1,
+    },
+    allNodeIds: [numberNode1.id, numberNode2.id, sumNode1.id],
+    selectedNodeId: null,
+};
+
+export function App() {
+    const [{ nodesById, allNodeIds, selectedNodeId }, setNodes] = useState(initialState);
 
     const [, drop] = useDrop({
         accept: 'NODE',
-        drop({ node }: { node: Node; type: string }, monitor) {
+        drop({ node }: { node: ReactionNode; type: string }, monitor) {
             const delta = monitor.getDifferenceFromInitialOffset();
 
             if (delta == null) {
@@ -139,7 +176,7 @@ export function App() {
         },
     });
 
-    const handleNodeMove = (node: Node, position: { x: number; y: number }) => {
+    const handleNodeMove = (node: ReactionNode, position: { x: number; y: number }) => {
         setNodes(state => {
             const savedNode = state.nodesById[node.id];
 
@@ -160,7 +197,7 @@ export function App() {
         });
     };
 
-    const handleNodeSelect = (node: Node) => {
+    const handleNodeSelect = (node: ReactionNode) => {
         setNodes(state => ({
             ...state,
             selectedNodeId: node['id'],
@@ -169,7 +206,7 @@ export function App() {
 
     const nodes = allNodeIds
         .map(nodeId => nodesById[nodeId])
-        .filter((node): node is Node => node != null);
+        .filter((node): node is ReactionNode => node != null);
 
     return (
         <div

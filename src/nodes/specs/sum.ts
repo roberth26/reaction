@@ -1,10 +1,12 @@
-import { ReactionNodeSpec, ReactionNodeInput } from '../types';
+import { ReactionNodeSpec, ReactionNodeInput, ReactionNode } from '../types';
 
-export const spec: ReactionNodeSpec<'sum', 'number', { operands: ReactionNodeInput<'number'> }> = {
-    create: (id, name) => ({
-        id,
-        name,
-        type: 'sum',
+export type SumNode = ReactionNode<'sum', 'number', { operands: ReactionNodeInput<'number'> }>;
+
+export const spec: ReactionNodeSpec<SumNode> = {
+    create: attrs => ({
+        ...attrs,
+        kind: 'sum',
+        type: 'number',
         state: {},
         inputs: {
             operands: {
@@ -18,6 +20,8 @@ export const spec: ReactionNodeSpec<'sum', 'number', { operands: ReactionNodeInp
             nodeIds: [],
             value: null,
         },
+        x: 0,
+        y: 0,
     }),
     evaluate: ({ operands }) => operands.reduce((a, b) => a + b, 0),
 };
