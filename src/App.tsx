@@ -1,34 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import { ReactionNode } from './nodes/types';
+import { ReactionNode, ReactionNodeInput } from './nodes/types';
 import { createNode } from './nodes/utils';
 import { SumNode } from './nodes/specs/sum';
 
-function Input({ node }: { node: ReactionNode }) {
+const Input = forwardRef<HTMLDivElement, { input: ReactionNodeInput }>(({ input }, ref) => {
     const [{ canDrop, isOver }, dropRef] = useDrop({
-        accept: node.type,
+        accept: input.type,
         collect: monitor => ({
             canDrop: monitor.canDrop(),
             isOver: monitor.isOver(),
         }),
-        drop: () => node,
+        // drop: () => node, TODO:
     });
 
     return (
         <div
             ref={dropRef}
             style={{
-                width: 20,
-                height: 20,
-                backgroundColor: isOver && canDrop ? 'green' : 'red',
+                display: 'flex',
+                alignItems: 'center',
             }}
-        ></div>
+        >
+            <div
+                ref={ref}
+                style={{
+                    width: 20,
+                    height: 20,
+                    backgroundColor: isOver && canDrop ? 'green' : 'red',
+                }}
+            />
+            {input.name}
+        </div>
     );
-}
+});
 
 function Output({ node }: { node: ReactionNode }) {
-    const [, dragRef] = useDrag<ReactionNode, ReactionNode, { opacity: number }>({
-        item: node,
+    const [, dragRef] = useDrag<
+        { type: ReactionNode['output']['type']; node: ReactionNode },
+        ReactionNode,
+        { opacity: number }
+    >({
+        item: {
+            type: node.output.type,
+            node,
+        },
         end: (item, monitor) => {
             const dropResult = monitor.getDropResult();
 
@@ -97,7 +113,9 @@ function Node({
                 border: isSelected ? '2px solid #00d0ff' : 0,
             }}
         >
-            <Input node={node} />
+            {Object.values(node.inputs).map(input => (
+                <Input key={input.name} input={input} />
+            ))}
             {node.kind}
             <Output node={node} />
         </div>
@@ -157,6 +175,45 @@ const initialState: {
     selectedNodeId: null,
 };
 
+function Background({
+    width,
+    height,
+    children,
+}: {
+    width: number;
+    height: number;
+    children: (args: {}) => React.ReactNode;
+}) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const { current: canvasElement } = canvasRef;
+
+        if (canvasElement == null) {
+            return;
+        }
+
+        const context = canvasElement.getContext('2d');
+
+        if (context == null) {
+            return;
+        }
+
+        context.fillRect(20, 20, 100, 100);
+    });
+
+    return (
+        <div style={{ position: 'absolute', top: 0, left: 0, width, height }}>
+            <canvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                style={{ position: 'absolute', top: 0, left: 0, width, height }}
+            />
+        </div>
+    );
+}
+
 export function App() {
     const [{ nodesById, allNodeIds, selectedNodeId }, setNodes] = useState(initialState);
 
@@ -208,6 +265,9 @@ export function App() {
         .map(nodeId => nodesById[nodeId])
         .filter((node): node is ReactionNode => node != null);
 
+    const width = 2000;
+    const height = 2000;
+
     return (
         <div
             ref={drop}
@@ -215,11 +275,12 @@ export function App() {
                 position: 'absolute',
                 left: 0,
                 top: 0,
-                width: '100%',
-                height: '100%',
+                width,
+                height,
                 backgroundColor: '#161e27',
             }}
         >
+            <Background width={width} height={height} children={() => null} />
             {nodes.map(node => (
                 <Node
                     key={node.id}

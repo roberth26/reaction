@@ -6,10 +6,10 @@ export const spec: ReactionNodeSpec<SumNode> = {
     create: attrs => ({
         ...attrs,
         kind: 'sum',
-        type: 'number',
         state: {},
         inputs: {
             operands: {
+                name: 'operands',
                 type: 'number',
                 variadic: true,
                 nodeIds: [],

@@ -6,7 +6,6 @@ export const spec: ReactionNodeSpec<NumberNode> = {
     create: attrs => ({
         ...attrs,
         kind: 'number',
-        type: 'number',
         state: { value: 1 },
         inputs: {},
         output: {

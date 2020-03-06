@@ -9,6 +9,7 @@ export type ReactionType<NodeType extends ReactionNodeType = ReactionNodeType> =
 
 export type ReactionNodeInput<NodeType extends ReactionNodeType = ReactionNodeType> = {
     type: NodeType;
+    name: string;
     variadic: boolean;
     nodeIds: ReactionNode['id'][];
 };
@@ -30,7 +31,6 @@ export type ReactionNode<
     State extends object = {}
 > = {
     kind: Kind;
-    type: Type;
     inputs: Inputs;
     output: ReactionNodeOutput<Type>;
     state: State;
@@ -47,5 +47,5 @@ export type ReactionNodeSpec<Node extends ReactionNode = ReactionNode> = {
             [key in keyof Node['inputs']]: ReactionType<Node['inputs'][key]['type']>[];
         },
         state: Node['state']
-    ) => ReactionType<Node['type']>;
+    ) => ReactionType<Node['output']['type']>;
 };
