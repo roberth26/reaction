@@ -15,22 +15,19 @@ const Input = forwardRef<HTMLDivElement, { input: ReactionNodeInput }>(({ input 
     });
 
     return (
-        <div
-            ref={dropRef}
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-            }}
-        >
-            <div
-                ref={ref}
-                style={{
-                    width: 20,
-                    height: 20,
-                    backgroundColor: isOver && canDrop ? 'green' : 'red',
-                }}
-            />
-            {input.name}
+        <div ref={dropRef}>
+            {[...input.nodeIds, ...(input.variadic ? [''] : [])].map((nodeId, index) => (
+                <div
+                    key={nodeId}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <div style={{ width: 20, height: 20, backgroundColor: 'green' }} />
+                    {`${input.name}${input.variadic ? ` [${index}]` : ''}`}
+                </div>
+            ))}
         </div>
     );
 });
