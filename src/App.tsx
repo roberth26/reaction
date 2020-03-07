@@ -250,7 +250,7 @@ function Viewport({
 
                     const inputRect = inputElement.getBoundingClientRect();
                     const inputPos: Pick<DOMRect, 'x' | 'y'> = {
-                        x: inputRect.x, // TODO: + inputRect.width / 2,
+                        x: inputRect.x + inputRect.width / 2,
                         y: inputRect.y + inputRect.height / 2,
                     };
 
@@ -270,7 +270,7 @@ function Viewport({
                         const outputRect = outputElement.getBoundingClientRect();
 
                         const outputPos: Pick<DOMRect, 'x' | 'y'> = {
-                            x: outputRect.x + outputRect.width, // TODO: fix + outputRect.width / 2,
+                            x: outputRect.x + outputRect.width / 2,
                             y: outputRect.y + outputRect.height / 2,
                         };
 
@@ -299,7 +299,6 @@ function Viewport({
 
     return (
         <div style={{ position: 'absolute', top: 0, left: 0, width, height }}>
-            <viewportContext.Provider value={vpContext}>{children}</viewportContext.Provider>
             <canvas
                 ref={canvasRef}
                 width={width}
@@ -313,6 +312,7 @@ function Viewport({
                     pointerEvents: 'none',
                 }}
             />
+            <viewportContext.Provider value={vpContext}>{children}</viewportContext.Provider>
         </div>
     );
 }
