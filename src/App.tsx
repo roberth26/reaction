@@ -249,6 +249,10 @@ function Viewport({
                     }
 
                     const inputRect = inputElement.getBoundingClientRect();
+                    const inputPos: Pick<DOMRect, 'x' | 'y'> = {
+                        x: inputRect.x, // TODO: + inputRect.width / 2,
+                        y: inputRect.y + inputRect.height / 2,
+                    };
 
                     nodeInput.nodeIds.forEach(nodeId => {
                         const upstreamNode = nodesById[nodeId];
@@ -257,23 +261,35 @@ function Viewport({
                             return;
                         }
 
-                        const upstreamNodeOuputElement = elements[nodeId];
+                        const outputElement = elements[nodeId];
 
-                        if (upstreamNodeOuputElement == null) {
+                        if (outputElement == null) {
                             return;
                         }
 
-                        const outputRect = upstreamNodeOuputElement.getBoundingClientRect();
+                        const outputRect = outputElement.getBoundingClientRect();
 
-                        context.strokeStyle = 'white';
+                        const outputPos: Pick<DOMRect, 'x' | 'y'> = {
+                            x: outputRect.x + outputRect.width, // TODO: fix + outputRect.width / 2,
+                            y: outputRect.y + outputRect.height / 2,
+                        };
+
+                        const xDelta = Math.abs(inputPos.x - outputPos.x);
+                        const yDelta = Math.abs(inputPos.y - outputPos.y);
+
+                        const bezierLength = Math.max(xDelta, yDelta) / 4;
+
+                        context.strokeStyle = '#73acde';
+                        context.lineWidth = 2;
                         context.beginPath();
-                        context.moveTo(
-                            inputRect.x + inputRect.width / 2,
-                            inputRect.y + inputRect.height / 2
-                        );
-                        context.lineTo(
-                            outputRect.x + outputRect.width / 2,
-                            outputRect.y + outputRect.height / 2
+                        context.moveTo(outputPos.x, outputPos.y);
+                        context.bezierCurveTo(
+                            outputPos.x + bezierLength,
+                            outputPos.y,
+                            inputPos.x - bezierLength,
+                            inputPos.y,
+                            inputPos.x,
+                            inputPos.y
                         );
                         context.stroke();
                     });
@@ -283,13 +299,20 @@ function Viewport({
 
     return (
         <div style={{ position: 'absolute', top: 0, left: 0, width, height }}>
+            <viewportContext.Provider value={vpContext}>{children}</viewportContext.Provider>
             <canvas
                 ref={canvasRef}
                 width={width}
                 height={height}
-                style={{ position: 'absolute', top: 0, left: 0, width, height }}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width,
+                    height,
+                    pointerEvents: 'none',
+                }}
             />
-            <viewportContext.Provider value={vpContext}>{children}</viewportContext.Provider>
         </div>
     );
 }
