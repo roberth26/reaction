@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, createContext, useContext } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import { ReactionNode, ReactionNodeInput } from './nodes/types';
+import { ReactionNode, ReactionNodeInput, ReactionNodeOutput } from './nodes/types';
 import { createNode } from './nodes/utils';
 import { SumNode } from './nodes/specs/sum';
 
@@ -14,8 +14,15 @@ const Input = forwardRef<HTMLDivElement, { input: ReactionNodeInput }>(({ input 
         // drop: () => node, TODO:
     });
 
+    const { storeElement } = useContext(viewportContext);
+
     return (
-        <div ref={dropRef}>
+        <div
+            ref={element => {
+                storeElement(input.id, element);
+                dropRef(element);
+            }}
+        >
             {[...input.nodeIds, ...(input.variadic ? [''] : [])].map((nodeId, index) => (
                 <div
                     key={nodeId}
@@ -51,9 +58,14 @@ function Output({ node }: { node: ReactionNode }) {
         },
     });
 
+    const { storeElement } = useContext(viewportContext);
+
     return (
         <div
-            ref={dragRef}
+            ref={element => {
+                storeElement(node.id, element);
+                dragRef(element);
+            }}
             style={{
                 width: 20,
                 height: 20,
@@ -82,13 +94,13 @@ function Node({
         }),
     });
 
-    if (isDragging) {
-        return <div ref={drag} />;
-    }
-
     const handleClick: React.MouseEventHandler<HTMLDivElement> = mouseEvent => {
         onSelect(node);
     };
+
+    if (isDragging) {
+        return <div ref={drag} />;
+    }
 
     return (
         <div
@@ -119,25 +131,28 @@ function Node({
     );
 }
 
-const numberNode = createNode('number')!;
+const numberNodeBase = createNode('number')!;
 
 const numberNode1: ReactionNode = {
-    ...numberNode!,
+    ...numberNodeBase,
     id: 'a',
     x: 100,
     y: 200,
     output: {
-        ...numberNode.output,
+        ...numberNodeBase.output,
         nodeIds: ['c'],
     },
 };
+
+const numberNodeBase2 = createNode('number')!;
+
 const numberNode2: ReactionNode = {
-    ...numberNode!,
+    ...numberNodeBase2,
     id: 'b',
     x: 100,
     y: 400,
     output: {
-        ...numberNode.output,
+        ...numberNodeBase2.output,
         nodeIds: ['c'],
     },
 };
@@ -172,16 +187,41 @@ const initialState: {
     selectedNodeId: null,
 };
 
-function Background({
+type ViewportContext = {
+    storeElement: (
+        ioId: ReactionNodeInput['id'] | ReactionNode['id'],
+        element: HTMLElement | null
+    ) => void;
+};
+
+const viewportContext = createContext<ViewportContext>({
+    storeElement: () => {},
+});
+
+function Viewport({
     width,
     height,
+    nodesById,
     children,
 }: {
     width: number;
     height: number;
-    children: (args: {}) => React.ReactNode;
+    nodesById: Partial<Record<ReactionNode['id'], ReactionNode>>;
+    children: React.ReactNode;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [elements, setElements] = useState<
+        Record<ReactionNodeInput['id'] | ReactionNode['id'], HTMLElement | null>
+    >({});
+
+    const { current: vpContext } = useRef<ViewportContext>({
+        storeElement: (id, element) => {
+            setElements(elements => ({
+                ...elements,
+                [id]: element,
+            }));
+        },
+    });
 
     useEffect(() => {
         const { current: canvasElement } = canvasRef;
@@ -196,8 +236,50 @@ function Background({
             return;
         }
 
-        context.fillRect(20, 20, 100, 100);
-    });
+        context.clearRect(0, 0, width, height);
+
+        Object.values(nodesById)
+            .filter((node): node is ReactionNode => node != null)
+            .forEach(node => {
+                Object.values(node.inputs).forEach(nodeInput => {
+                    const inputElement = elements[nodeInput.id];
+
+                    if (inputElement == null) {
+                        return;
+                    }
+
+                    const inputRect = inputElement.getBoundingClientRect();
+
+                    nodeInput.nodeIds.forEach(nodeId => {
+                        const upstreamNode = nodesById[nodeId];
+
+                        if (upstreamNode == null) {
+                            return;
+                        }
+
+                        const upstreamNodeOuputElement = elements[nodeId];
+
+                        if (upstreamNodeOuputElement == null) {
+                            return;
+                        }
+
+                        const outputRect = upstreamNodeOuputElement.getBoundingClientRect();
+
+                        context.strokeStyle = 'white';
+                        context.beginPath();
+                        context.moveTo(
+                            inputRect.x + inputRect.width / 2,
+                            inputRect.y + inputRect.height / 2
+                        );
+                        context.lineTo(
+                            outputRect.x + outputRect.width / 2,
+                            outputRect.y + outputRect.height / 2
+                        );
+                        context.stroke();
+                    });
+                });
+            });
+    }, [nodesById, elements]);
 
     return (
         <div style={{ position: 'absolute', top: 0, left: 0, width, height }}>
@@ -207,6 +289,7 @@ function Background({
                 height={height}
                 style={{ position: 'absolute', top: 0, left: 0, width, height }}
             />
+            <viewportContext.Provider value={vpContext}>{children}</viewportContext.Provider>
         </div>
     );
 }
@@ -277,15 +360,16 @@ export function App() {
                 backgroundColor: '#161e27',
             }}
         >
-            <Background width={width} height={height} children={() => null} />
-            {nodes.map(node => (
-                <Node
-                    key={node.id}
-                    node={node}
-                    isSelected={node.id === selectedNodeId}
-                    onSelect={handleNodeSelect}
-                />
-            ))}
+            <Viewport width={width} height={height} nodesById={nodesById}>
+                {nodes.map(node => (
+                    <Node
+                        key={node.id}
+                        node={node}
+                        isSelected={node.id === selectedNodeId}
+                        onSelect={handleNodeSelect}
+                    />
+                ))}
+            </Viewport>
         </div>
     );
 }

@@ -3,8 +3,9 @@ import { ReactionNode, ReactionNodeSpec } from '../types';
 export type NumberNode = ReactionNode<'number', 'number', {}, { value: number }>;
 
 export const spec: ReactionNodeSpec<NumberNode> = {
-    create: attrs => ({
-        ...attrs,
+    create: () => ({
+        id: `${Math.random()}`,
+        name: 'number',
         kind: 'number',
         state: { value: 1 },
         inputs: {},

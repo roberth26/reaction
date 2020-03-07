@@ -8,5 +8,5 @@ export const createNode = (kind: ReactionNode['kind']) => {
         return null;
     }
 
-    return spec.create({ id: `${Math.random()}`, name: `${kind}-01` });
+    return spec.create();
 };

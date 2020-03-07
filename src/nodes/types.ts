@@ -12,6 +12,7 @@ export type ReactionNodeInput<NodeType extends ReactionNodeType = ReactionNodeTy
     name: string;
     variadic: boolean;
     nodeIds: ReactionNode['id'][];
+    id: string;
 };
 
 export type ReactionNodeInputs = {
@@ -41,7 +42,7 @@ export type ReactionNode<
 };
 
 export type ReactionNodeSpec<Node extends ReactionNode = ReactionNode> = {
-    create: (attrs: Pick<Node, 'id' | 'name'>) => Node;
+    create: () => Node;
     evaluate: (
         args: {
             [key in keyof Node['inputs']]: ReactionType<Node['inputs'][key]['type']>[];

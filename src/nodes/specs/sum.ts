@@ -3,8 +3,9 @@ import { ReactionNodeSpec, ReactionNodeInput, ReactionNode } from '../types';
 export type SumNode = ReactionNode<'sum', 'number', { operands: ReactionNodeInput<'number'> }>;
 
 export const spec: ReactionNodeSpec<SumNode> = {
-    create: attrs => ({
-        ...attrs,
+    create: () => ({
+        id: `${Math.random()}`,
+        name: 'sum',
         kind: 'sum',
         state: {},
         inputs: {
@@ -13,6 +14,7 @@ export const spec: ReactionNodeSpec<SumNode> = {
                 type: 'number',
                 variadic: true,
                 nodeIds: [],
+                id: `${Math.random()}`,
             },
         },
         output: {
