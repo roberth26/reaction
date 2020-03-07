@@ -25,11 +25,22 @@ export type ReactionNodeOutput<NodeType extends ReactionNodeType = ReactionNodeT
     value: ReactionType<NodeType> | null;
 };
 
+export type ReactionStateEntry<
+    NodeType extends ReactionNodeType = ReactionNodeType,
+    Name extends string = string
+> = {
+    name: Name;
+    type: NodeType;
+    value: ReactionType<NodeType>;
+};
+
+export type ReactionNodeState = Partial<Record<ReactionStateEntry['name'], ReactionStateEntry>>;
+
 export type ReactionNode<
     Kind extends string = string,
     Type extends ReactionNodeType = ReactionNodeType,
     Inputs extends ReactionNodeInputs = ReactionNodeInputs,
-    State extends object = {}
+    State extends ReactionNodeState = ReactionNodeState
 > = {
     kind: Kind;
     inputs: Inputs;
